@@ -1,0 +1,16 @@
+COPYING
+LICENSE
+README.md
+pyproject.toml
+src/anima/Unfinished_mlpot.py
+src/anima/__init__.py
+src/anima/models.py
+src/anima/neuralnetwork.py
+src/anima/representations.py
+src/anima/smiles.py
+src/anima.egg-info/PKG-INFO
+src/anima.egg-info/SOURCES.txt
+src/anima.egg-info/dependency_links.txt
+src/anima.egg-info/requires.txt
+src/anima.egg-info/top_level.txt
+src/anima/lib/xyz2mol.py

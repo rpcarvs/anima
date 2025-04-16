@@ -1,1 +1,34 @@
-# anima
+# ANIMA
+
+ANIMA (AdvaNced artificial Intelligence for Materials reseArch) is a machine learning code developed to work with Quantum Mechanics and Materials Science. For now, the main goal is related to energy materials and organic electroactive materials. The software includes a collection of tools and functions to process data in a
+molecular or solid-state level and uses the processed data to build a ML model based on Neural Networks.
+The user has the freedom to choose between our NN (see "models" class) or any external framework, e.g., Tensorflow/PyTorch.
+
+Here are a few representations for the molecular/crystals systems available:
+* Couloumb Matrix
+* Many Body Tensor Representation
+* SMILES
+
+The SMILES package also contains a set of text-based functions in order to prepare the SMILES string
+for a natural language processing (NLP) approach, if necessary.
+
+### Dependencies:
+This package is based on common python libraries, except in specific cases.
+* numpy
+* scipy
+* pandas
+* joblib
+* sklearn (only used for a simple scaling and will be removed in a future version)
+
+ONLY FOR THE SMILES CLASS:
+* rdkit
+* openbabel/pybel (version 3 or later is recommended)
+* pysmiles
+
+ONLY FOR THE AI-kernel model (in models module):
+* pytorch (model was developed using version 1.7)
+
+It is also recommended to install the dependencies in a new python-environment and using Anaconda.
+
+----
+Please, feel free to contact me at rodrigo.carvalho.al@gmail.com, rodrigo.carvalho@physics.uu.se or rodrigo.carvalho@kemi.uu.se

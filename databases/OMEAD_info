@@ -1,0 +1,25 @@
+Additional information regarding the OMEAD (Organic Materials for Energy Applications Database). More details about the development of this database can be found in https://doi.org/10.1016/j.ensm.2021.10.029 and DOI_HERE.
+
+# index: molecule id inside the database
+
+# dielectric constants obtained from Clausius-Mossotti equation
+
+# homo and lumo energies in Hartree
+
+# Oxidation and Reduction potentials in Volts and referred to the vacuum
+
+# Ionization potentials (ip) and electron affinities (ea) in Volts and referred to the vacuum
+
+# The change in electronic energy for oxidation (deo) and reduction (der) reactions in Volts and referred to the vacuum
+
+# The tag "_solv" in these thermodynamic quantities refers to a variant of these energies when the molecule were solvated in acetonitrile and considering the SMD solvation model.
+
+# capacity in mAh/g
+
+# redox_centers: anticipated redox centers from the SMILES analysis
+
+# smiles: molecule SMILES
+
+# redox_stable: check if the molecule has suffered a bond length change higher than 40% for closed neighbors (smaller than 2.1 A) from neutral to oxidized or reduced phases. If True, the molecule is classified as unstable.
+
+

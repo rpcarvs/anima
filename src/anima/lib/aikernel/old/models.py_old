@@ -1,0 +1,242 @@
+"""
+A collection of trained models.
+
+Created by © Rodrigo Carvalho 2021
+Mainteined by © Rodrigo Carvalho
+"""
+
+from sys import float_repr_style
+import numpy as np
+import os
+
+def AIkernel(smiles_list, n_jobs=-1, batch_size = 64, return_redox = False, return_smiles = False):
+    """The AI-kernel as developed in REF_PAPER. This function receives a
+    list of SMILES-strings as inputs and return voltages (or voltges and
+    redox potentials). The voltages are referred to the Lithium reference
+    electrode (i.e. vs. Li/Li+). The oxidation and reduction potentials
+    are referred to the vacuum.
+
+    Args:
+        smiles_list ([string]): List of the SMILES-string. (must be a list)
+        n_jobs (int, optional): Number of jobs to process the SMILES. Defaults to -1 (all available cores).
+        batch_size (int, optional): size of mini_batches
+        return_redox (bool): if True the kernel will also returns the oxidation and reduction potential
+        return_smiles (bool) = if True a list with the valid SMILES will be returned
+
+    Returns:
+        [float]: list of predicted voltages.
+                 if return_redox = True, return a list of 
+                 [voltages, [oxidation, reduciton]] values.
+    """
+    from joblib import Parallel, delayed
+    import torch
+    from .smiles import SMILES
+    
+    path = os.path.dirname(__file__)+"/lib/aikernel/"
+
+    #reading vocab
+    with open(path+'vocab.dat', 'r') as f:
+        vocab = f.read().splitlines()
+
+    #setting max SMILES lenght
+    max_length = 54
+
+    #loading SMILES class
+    sml = SMILES()
+
+    #Defining the linear model
+    def linear(ox, red):
+        return np.multiply(0.1539, ox) + np.multiply(0.8298, red) - 1.5822
+    
+    #Defining the linear model (only reduction potential)
+    def linear2(red):
+        return np.multiply(0.8809, red) - 0.7833
+
+    #defining the neural model
+    def neural(smiles_list, batch_size = batch_size, n_jobs = n_jobs):
+
+        def smiles_sequence(smiles_list, n_jobs):
+            global exceptions
+            global smi
+            exceptions = []
+            smi = []
+            def compute(i):
+                global exceptions
+                global smi
+                
+                if len(sml.smilesSEP(i)) > max_length:
+                    smi.append(i)
+                    return
+                else:
+                    try:
+                        try:
+                            return torch.tensor(sml.smilesToSequence((sml.smiles_cleaner(
+                                sml.OB_standard_smiles(sml.standard_smiles(i)))),vocab))
+                        except:
+                            return torch.tensor(sml.smilesToSequence((sml.smiles_cleaner(
+                                sml.OB_standard_smiles(
+                                    sml.standard_smiles(sml.PS_fix(i))))),vocab))
+                    except:
+                        exceptions.append(i)
+                        return 
+
+
+            all_sequences = Parallel(
+                n_jobs=n_jobs,
+                verbose=1,
+                max_nbytes='200M',
+                backend="threading",
+            )(delayed(compute)(i) for i in smiles_list)
+
+            if exceptions:
+                print('Error when processing SMILES:\n', exceptions)
+                with open('invalid_smiles.dat', 'w') as f:
+                    for i in exceptions:
+                        f.write(str(i) + '\n')
+            if smi:
+                print('SMILES bigger than the max allowed length (54):\n',smi)
+                with open('big_smiles.dat', 'w') as f:
+                    for i in smi:
+                        f.write(str(i) + '\n')
+
+            return all_sequences
+
+        all_sequences = smiles_sequence(smiles_list, n_jobs)
+        all_sequences = [ii for ii in all_sequences if ii is not None]
+        if not any([ ii.tolist() for ii in all_sequences]): return
+        packing = torch.nn.utils.rnn.pack_sequence(all_sequences, enforce_sorted=False)
+        packing_padding = torch.nn.utils.rnn.pad_packed_sequence(packing, batch_first=True, total_length=max_length)
+        x = packing_padding[0][:, :, 0]
+        del packing, packing_padding, all_sequences
+
+        #checking cuda
+        use_cuda = True
+        device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "cpu")
+
+        #prediction function
+        def predictions(model, x, device, batch_size = batch_size):
+            # predictions
+
+            model.eval().to(device)
+
+            pred_data = torch.utils.data.TensorDataset(x)
+            pred_loader = torch.utils.data.DataLoader(pred_data, shuffle=False,
+                                     batch_size=batch_size, drop_last=False)
+            batches = len(x) / batch_size
+
+            #temp = []
+            with torch.no_grad():
+                for batch_idx, data in enumerate(pred_loader):
+                    print('Batch: {:010.2f} of {:010.2f} batches'.format(
+                        batch_idx + 1, batches), end='\r')
+                    inputs = data[0]
+                    inputs = inputs.to(device)
+
+                    # forward + backward + optimize
+                    output = model(inputs)
+                    if batch_idx == 0:
+                        temp = output.cpu().detach().numpy()
+                    else:
+                        temp = np.append(temp, output.cpu().detach().numpy())
+                    #temp.append(*[i for i in output.cpu().detach().numpy()])
+
+            model.train()
+            return np.reshape(temp, -1)
+
+        # defining the NN model
+        class NN(torch.nn.Module):
+            def __init__(self, hidden_dim, output_dim, n_layers, decoder_in, decoder_out, vocab_size, emb_dim, max_length, dropout):
+                super().__init__()
+                self.hidden_dim = hidden_dim
+                self.n_layers = n_layers
+
+                self.gruA = torch.nn.GRU(
+                    emb_dim, hidden_dim, n_layers, batch_first=True, dropout=dropout)
+                self.gruB = torch.nn.GRU(
+                    emb_dim, hidden_dim, n_layers, batch_first=True, dropout=dropout)
+                self.gruC = torch.nn.GRU(
+                    emb_dim, hidden_dim, n_layers, batch_first=True, dropout=dropout)
+                self.gruD = torch.nn.GRU(
+                    emb_dim, hidden_dim, n_layers, batch_first=True, dropout=dropout)
+
+                self.fcA = torch.nn.Linear(hidden_dim, decoder_in)
+                self.fcB = torch.nn.Linear(hidden_dim, decoder_in)
+                self.fcC = torch.nn.Linear(hidden_dim, decoder_in)
+                self.fcD = torch.nn.Linear(hidden_dim, decoder_in)
+
+                self.decoder = torch.nn.Linear(max_length*4*decoder_in, decoder_out)
+                self.pre_output = torch.nn.Linear(decoder_out, 1)
+                self.output = torch.nn.Linear(1, output_dim)
+
+                self.activation = torch.nn.Sigmoid()
+                self.embeddings = torch.nn.Embedding(
+                    vocab_size, emb_dim, max_norm=1.0, padding_idx=0)
+
+            def forward(self, inputs):
+                batch = len(inputs)
+                inputs = self.embeddings(inputs)
+
+                hidden = self.initHidden(batch, self.hidden_dim)
+                gruA, hidden = self.gruA(inputs, hidden)
+                gruB, hidden = self.gruB(inputs, hidden)
+                gruC, hidden = self.gruC(inputs, hidden)
+                gruD, hidden = self.gruD(inputs, hidden)
+
+                fcA = self.fcA(gruA)
+                fcA = fcA*self.activation(fcA)
+                fcB = self.fcB(gruB)
+                fcB = fcB*self.activation(fcB)
+                fcC = self.fcC(gruC)
+                fcC = fcC*self.activation(fcC)
+                fcD = self.fcD(gruD)
+                fcD = fcD*self.activation(fcD)
+
+                cat = torch.cat((fcA, fcB, fcC, fcD), -1)
+                cat = cat.reshape(batch, -1)
+
+                decoder = self.decoder(cat)
+                decoder = decoder*self.activation(decoder)
+
+                output = self.pre_output(decoder)
+                output = self.output(output)
+
+                return output[:, 0]
+
+            def initHidden(self, batch_size, hidden_dim):
+                return torch.zeros(self.n_layers, batch_size, hidden_dim, dtype=torch.float, device=device)
+
+        #loading trained models
+        vocab_size = len(vocab)
+        nn_ox = NN(128, 1, 2, 8, 32, vocab_size, 128, max_length, 0)
+        nn_red = NN(128, 1, 2, 8, 32, vocab_size, 128, max_length, 0)
+        #nn_ox = NN(hidden_dim, output_dim, n_layers, decoder_in, decoder_out, vocab_size, emb_dim, max_length, 0)
+        #nn_red = NN(hidden_dim, output_dim, n_layers, decoder_in, decoder_out, vocab_size, emb_dim, max_length, 0)
+        nn_ox.load_state_dict(torch.load(path+'nn_ox.pt', map_location=torch.device(device)))
+        nn_red.load_state_dict(torch.load(path+'nn_red.pt', map_location=torch.device(device)))
+        nn_ox.eval()
+        nn_red.eval()
+
+        return predictions(nn_ox, x, device, batch_size = batch_size), predictions(nn_red, x, device, batch_size = batch_size)
+
+    try:
+        ox, red = neural(smiles_list, batch_size, n_jobs)
+        out = {}
+        if return_smiles == True:
+            temp = list(smiles_list)
+            for rr in smi + exceptions:
+                temp.remove(rr)
+            out['smiles'] = temp
+            
+        out['voltages'] = list(linear2(ox, red))
+        
+        if return_redox == True:
+            out['ox/red'] = [list(ox), list(red)]
+            
+        #if return_redox == True: return linear(ox, red), [ox, red]
+        #return linear(ox, red)
+
+        return out
+        
+    except:
+        return print("No valid input/SMILES")
+    
