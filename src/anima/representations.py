@@ -96,7 +96,7 @@ class Tools:
         for name in atoms:
             f.write(str(len(mol_in[mol_in["atom"] == name])) + " ")
         f.write("\n")
-        if selective_dynamics == True:
+        if selective_dynamics:
             f.write("Selective dynamics\n")
         f.write("Cartesian\n")
         xm = mol_in["x"].mean()
@@ -106,7 +106,7 @@ class Tools:
             f.write(str(mol_in.iloc[atom]["x"] - xm + box / 2) + " ")
             f.write(str(mol_in.iloc[atom]["y"] - ym + box / 2) + " ")
             f.write(str(mol_in.iloc[atom]["z"] - zm + box / 2) + " ")
-            if selective_dynamics == True:
+            if selective_dynamics:
                 f.write(" T T T ")
             f.write("\n")
 
@@ -609,7 +609,7 @@ class Tools:
         file_en = open(file, mode="r")
         en = file_en.read().splitlines()
         file_en.close()
-        if list(en[0])[0].isdigit() == True:
+        if list(en[0])[0].isdigit():
             energ = pd.read_csv(file, delim_whitespace=True, header=None)
         else:
             energ = pd.read_csv(file, delim_whitespace=True)
@@ -643,10 +643,10 @@ class Tools:
             header=None,
             names=("atom", "x", "y", "z"),
         )
-        if sort == True:
+        if sort:
             mol_in.sort_values(by=["atom", "x", "y", "z"], inplace=True)
             mol_in.reset_index(drop=True, inplace=True)
-        if atomic_number == True:
+        if atomic_number:
             mol_in["Z"] = [
                 self.element(mol_in["atom"][i], "Z") for i in range(len(mol_in))
             ]
@@ -683,10 +683,10 @@ class Tools:
         mol_in = pd.DataFrame(mol_in[mol_in[0] == "HETATM"].drop([0, 1, 3, 7], axis=1))
         mol_in.columns = ("atom", "x", "y", "z")
 
-        if sort == True:
+        if sort:
             mol_in.sort_values(by=["atom", "x", "y", "z"], inplace=True)
             mol_in.reset_index(drop=True, inplace=True)
-        if atomic_number == True:
+        if atomic_number:
             mol_in["Z"] = [
                 self.element(mol_in["atom"][i], "Z") for i in range(len(mol_in))
             ]
@@ -702,7 +702,7 @@ class Tools:
         axis_nb = len(array.shape)
 
         if pad_size < 0:
-            return a
+            return array
 
         npad = [(0, 0) for x in range(axis_nb)]
         npad[axis] = (0, pad_size)
@@ -810,7 +810,7 @@ class Tools:
                 f_pad.append(all_mbtr[i][3])
 
         # zero-pad all calculated structures to have the same dimension
-        if final_pad == True:
+        if final_pad:
             if calc_type == "CM":
                 mx = []
                 for i in range(n_elem):
@@ -871,20 +871,20 @@ class Tools:
         act_dir = os.getcwd()
 
         if kind == "CM":
-            if force_rewrite == True:
+            if force_rewrite:
                 shutil.rmtree("cm_data")
                 print("Warning! Old folders have been deleted!")
             else:
-                if os.path.exists("cm_data") == True:
+                if os.path.exists("cm_data"):
                     return print("Folder exist!!")
             os.mkdir("cm_data")
             os.chdir("cm_data")
         elif kind == "MBTR":
-            if force_rewrite == True:
+            if force_rewrite:
                 shutil.rmtree("mbtr_data")
                 print("Warning! Old folders have been deleted!")
             else:
-                if os.path.exists("mbtr_data") == True:
+                if os.path.exists("mbtr_data"):
                     return print("Folder exist!!")
             os.mkdir("mbtr_data")
             os.chdir("mbtr_data")
@@ -1207,11 +1207,7 @@ class MBTR:
                 p1,p2,p3 are atoms positions in cartesian coordinates
                 """
                 # if np.array_equal(p1,p2)==True or np.array_equal(p1,p3)==True or np.array_equal(p2,p3)==True:
-                if (
-                    (p1 == p2).all() == True
-                    or (p1 == p3).all() == True
-                    or (p2 == p3).all() == True
-                ):
+                if (p1 == p2).all() or (p1 == p3).all() or (p2 == p3).all():
                     return 0.0
                 # if arq(p1,p2)==True or arq(p1,p3)==True or arq(p2,p3)==True:
                 #    return 0.0
@@ -1250,12 +1246,12 @@ class MBTR:
                 # 1 sqrt, 1 cross product
                 # FROM: https://stackoverflow.com/questions/20305272/
                 if (
-                    (p0 == p1).all() == True
-                    or (p0 == p2).all() == True
-                    or (p0 == p3).all() == True
-                    or (p1 == p2).all() == True
-                    or (p1 == p3).all() == True
-                    or (p2 == p3).all() == True
+                    (p0 == p1).all()
+                    or (p0 == p2).all()
+                    or (p0 == p3).all()
+                    or (p1 == p2).all()
+                    or (p1 == p3).all()
+                    or (p2 == p3).all()
                 ):
                     return 0.0
                 else:
@@ -1356,7 +1352,7 @@ class MBTR:
             axis_nb = len(array.shape)
 
             if pad_size < 0:
-                return a
+                return array
 
             npad = [(0, 0) for x in range(axis_nb)]
             npad[axis] = (0, pad_size)
@@ -1373,7 +1369,7 @@ class MBTR:
 
         # get all positions for fast indexing
         # compute distances matrix
-        if np.greater(k_idx, 1).any() == True:
+        if np.greater(k_idx, 1).any():
             # positions array
             pos = []
             for i in range(Natoms):
@@ -1418,7 +1414,7 @@ class MBTR:
                 f0 = np.array(f0)
 
                 # scaling
-                if scale == True:
+                if scale:
                     f0 = sc(f0, axis=0, with_mean=False)
 
                 f.append(np.reshape(f0, (1, np.shape(f0)[0])))
@@ -1462,7 +1458,7 @@ class MBTR:
                 f1 = np.array(f1)
 
                 # scaling
-                if scale == True:
+                if scale:
                     f1 = sc(
                         f1.reshape(len(atoms_iter), len(xx1)), axis=1, with_mean=False
                     )
@@ -1527,7 +1523,7 @@ class MBTR:
                 f2 = np.array(f2)
 
                 # scaling
-                if scale == True:
+                if scale:
                     f2 = sc(f2, axis=1, with_mean=False)
                 f.append(f2)
                 xx.append(xx2)
@@ -1542,7 +1538,7 @@ class MBTR:
                 # atoms to iterate
                 atoms_iter = atoms_zz(k, atoms)
 
-                if sparse == True:
+                if sparse:
                     # computing correlation and g_k arrays
                     ii = 0
                     n1 = []
@@ -1686,7 +1682,7 @@ class MBTR:
                     f3 = np.array(f3)
 
                 # scaling
-                if scale == True:
+                if scale:
                     f3 = sc(f3, axis=1, with_mean=False)
                 f.append(f3)
                 xx.append(xx3)
@@ -1701,7 +1697,7 @@ class MBTR:
                 # atoms to iterate
                 atoms_iter = atoms_zz(k, atoms)
 
-                if sparse == True:
+                if sparse:
                     # computing correlation and g_k arrays
                     ii = 0
                     n1 = []
@@ -1725,7 +1721,7 @@ class MBTR:
                                             ]
                                         )
                                         if cutoff is not None:
-                                            if np.any(dis > cutoff) == True:
+                                            if np.any(dis > cutoff):
                                                 pass
                                             else:
                                                 temp.append(
@@ -1817,7 +1813,7 @@ class MBTR:
                                             ]
                                         )
                                         if cutoff is not None:
-                                            if np.any(dis > cutoff) == True:
+                                            if np.any(dis > cutoff):
                                                 temp.append(0.0)
                                                 temp2.append(0.0)
                                             else:
@@ -1883,7 +1879,7 @@ class MBTR:
                     f4 = np.array(f4)
 
                 # scaling
-                if scale == True:
+                if scale:
                     f4 = sc(f4, axis=1, with_mean=False)
                 f.append(f4)
                 xx.append(xx4)
@@ -1893,7 +1889,7 @@ class MBTR:
         # final mbtr
         f = np.array(f, dtype=object)
         f_pad = []
-        if pad == True:
+        if pad:
             temp = []
             for i in range(len(f)):
                 temp.append(f[i].shape[0])

@@ -6,12 +6,74 @@ Mainteined by © Rodrigo Carvalho
 """
 
 import os
+from typing import List
 
 import numpy as np
 import torch
 from joblib import Parallel, delayed
 
 from .smiles import SMILES
+
+path = os.path.dirname(__file__) + "/lib/aikernel/"
+
+# reading vocab
+with open(path + "vocab.dat", "r") as f:
+    vocab = f.read().splitlines()
+sml = SMILES()
+
+
+def transform(molecule: str, fix: bool = False) -> List[str]:
+    if fix:
+        molecule = sml.PS_fix(molecule)
+    transformed = sml.OB_standard_smiles(sml.standard_smiles(molecule))
+    cleaned = sml.smiles_cleaner(transformed)
+    return sml.smilesToSequence(cleaned, vocab)
+
+
+def smiles_sequence(smiles_list, n_jobs, max_length):
+    global exceptions
+    global smi
+    exceptions = []
+    smi = []
+
+    def compute(i):
+        global exceptions
+        global smi
+
+        if len(sml.smilesSEP(i)) > max_length:
+            smi.append(i)
+            return
+        else:
+            try:
+                try:
+                    transformed = transform(i)
+                    return torch.tensor(transformed)
+                except Exception:
+                    transformed = transform(i, fix=True)
+                    return torch.tensor(transformed)
+            except Exception:
+                exceptions.append(i)
+                return
+
+    all_sequences = Parallel(
+        n_jobs=n_jobs,
+        verbose=1,
+        max_nbytes="200M",
+        backend="threading",
+    )(delayed(compute)(i) for i in smiles_list)
+
+    if exceptions:
+        print("Error when processing SMILES:\n", exceptions)
+        with open("invalid_smiles.dat", "w") as f:
+            for i in exceptions:
+                f.write(str(i) + "\n")
+    if smi:
+        print("SMILES bigger than the max allowed length (54):\n", smi)
+        with open("big_smiles.dat", "w") as f:
+            for i in smi:
+                f.write(str(i) + "\n")
+
+    return all_sequences
 
 
 def AIkernel(
@@ -41,17 +103,8 @@ def AIkernel(
         {}: a dictionary containing all the relevant results
     """
 
-    path = os.path.dirname(__file__) + "/lib/aikernel/"
-
-    # reading vocab
-    with open(path + "vocab.dat", "r") as f:
-        vocab = f.read().splitlines()
-
     # setting max SMILES lenght
     max_length = 54
-
-    # loading SMILES class
-    sml = SMILES()
 
     # Defining the linear model
     def linear(ox, red):
@@ -63,72 +116,7 @@ def AIkernel(
 
     # defining the neural model
     def neural(smiles_list, batch_size=batch_size, n_jobs=n_jobs):
-        def smiles_sequence(smiles_list, n_jobs):
-            global exceptions
-            global smi
-            exceptions = []
-            smi = []
-
-            def compute(i):
-                global exceptions
-                global smi
-
-                if len(sml.smilesSEP(i)) > max_length:
-                    smi.append(i)
-                    return
-                else:
-                    try:
-                        try:
-                            return torch.tensor(
-                                sml.smilesToSequence(
-                                    (
-                                        sml.smiles_cleaner(
-                                            sml.OB_standard_smiles(
-                                                sml.standard_smiles(i)
-                                            )
-                                        )
-                                    ),
-                                    vocab,
-                                )
-                            )
-                        except Exception:
-                            return torch.tensor(
-                                sml.smilesToSequence(
-                                    (
-                                        sml.smiles_cleaner(
-                                            sml.OB_standard_smiles(
-                                                sml.standard_smiles(sml.PS_fix(i))
-                                            )
-                                        )
-                                    ),
-                                    vocab,
-                                )
-                            )
-                    except Exception:
-                        exceptions.append(i)
-                        return
-
-            all_sequences = Parallel(
-                n_jobs=n_jobs,
-                verbose=1,
-                max_nbytes="200M",
-                backend="threading",
-            )(delayed(compute)(i) for i in smiles_list)
-
-            if exceptions:
-                print("Error when processing SMILES:\n", exceptions)
-                with open("invalid_smiles.dat", "w") as f:
-                    for i in exceptions:
-                        f.write(str(i) + "\n")
-            if smi:
-                print("SMILES bigger than the max allowed length (54):\n", smi)
-                with open("big_smiles.dat", "w") as f:
-                    for i in smi:
-                        f.write(str(i) + "\n")
-
-            return all_sequences
-
-        all_sequences = smiles_sequence(smiles_list, n_jobs)
+        all_sequences = smiles_sequence(smiles_list, n_jobs, max_length)
         all_sequences = [ii for ii in all_sequences if ii is not None]
         if not any([ii.tolist() for ii in all_sequences]):
             return

@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: anima
 Version: 1.0.0
 Author-email: Rodrigo Carvalho <rodrigo@evyon.com>
@@ -6,7 +6,7 @@ Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE
 License-File: COPYING
-Requires-Dist: numpy==1.21.5
+Dynamic: license-file
 
 # ANIMA
 
