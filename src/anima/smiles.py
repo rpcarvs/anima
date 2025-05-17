@@ -89,7 +89,7 @@ class SMILES:
 
         smi = mol.write(format="smi")
 
-        return smi.split()[0].strip()
+        return str(smi).split()[0].strip()
 
     def OB_standard_smiles(self, s: str, kekule: bool = False) -> str:
         """Read a SMILES string and convert it into a Canonical SMILES.
@@ -113,7 +113,7 @@ class SMILES:
         else:
             smi = mol.write(format="can")
 
-        return smi.split()[0]
+        return str(smi).split()[0]
 
     def PS_fix(self, s: str) -> str:
         """Read a SMILES string and fix some inconsistencies
@@ -356,7 +356,7 @@ class SMILES:
             backend="threading",  # 1035904 / 10.4 min for threading
             # pre_dispatch=128,
         )(delayed(compute)(i) for i in range(len(s)))
-        return list(np.unique([item for sublist in temp for item in sublist]))
+        return list(np.unique([item for sublist in temp for item in sublist]))  # type: ignore
 
     def letterToIndex(self, entry: str, vocab: List[str]) -> int:
         """Return the letter/index based on vocab. 0 will be returned
@@ -377,7 +377,7 @@ class SMILES:
 
     def smilesToSequence(
         self, entry: str, vocab: List[str], pack_bonds: bool = False
-    ) -> List[int]:
+    ) -> List[List[int]]:
         """Translates the SMILES into a index list based on the vocab.
 
         Args:
@@ -428,11 +428,11 @@ class SMILES:
                 else:
                     i = i.upper()
                 molar_mass += elements(i, "A") * n
-        li_mass = redox_centers * elements("Li", "A")
+        li_mass = redox_centers * float(elements("Li", "A"))
         hydrogens = len(
-            read_smiles(smiles, reinterpret_aromatic=False).nodes(data="hcount")
+            read_smiles(smiles, reinterpret_aromatic=False).nodes(data="hcount")  # type: ignore
         )
-        molar_mass += li_mass + hydrogens * elements("H", "A")
+        molar_mass += li_mass + hydrogens * float(elements("H", "A"))
         Faraday = 96485.33212
         return redox_centers, (redox_centers * Faraday) / (3.6 * molar_mass)
 

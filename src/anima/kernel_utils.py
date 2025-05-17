@@ -28,7 +28,7 @@ with open(path + "vocab.dat", "r") as f:
 sml = SMILES()
 
 
-def transform(molecule: str, fix: bool = False) -> List[int]:
+def transform(molecule: str, fix: bool = False) -> List[List[int]]:
     """Transform SMILES to a standard format"""
     if fix:
         molecule = sml.PS_fix(molecule)

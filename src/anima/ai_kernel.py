@@ -44,7 +44,7 @@ def AIkernel(
     max_length = 54
 
     all_sequences = smiles_sequence(smiles_list, n_jobs, max_length)
-    all_sequences = [ii for ii in all_sequences if ii is not None]
+    all_sequences = [ii for ii in all_sequences if ii is not None]  # type: ignore
     if not any([ii.tolist() for ii in all_sequences]):
         return
     packing = torch.nn.utils.rnn.pack_sequence(all_sequences, enforce_sorted=False)
