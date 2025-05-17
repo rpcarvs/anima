@@ -5,6 +5,7 @@ molecular or solid-state level and uses the processed data to build a ML model b
 The user has the freedom to choose between our NN (see "models" class) or any external framework, e.g., Tensorflow/PyTorch.
 
 Here are a few representations for the molecular/crystals systems available:
+
 * Couloumb Matrix
 * Many Body Tensor Representation
 * SMILES
@@ -12,8 +13,10 @@ Here are a few representations for the molecular/crystals systems available:
 The SMILES package also contains a set of text-based functions in order to prepare the SMILES string
 for a natural language processing (NLP) approach, if necessary.
 
-### Dependencies:
+## Dependencies
+
 This package is based on common python libraries, except in specific cases.
+
 * numpy
 * scipy
 * pandas
@@ -21,14 +24,16 @@ This package is based on common python libraries, except in specific cases.
 * sklearn (only used for a simple scaling and will be removed in a future version)
 
 ONLY FOR THE SMILES CLASS:
+
 * rdkit
 * openbabel/pybel (version 3 or later is recommended)
 * pysmiles
 
 ONLY FOR THE AI-kernel model (in models module):
+
 * pytorch (model was developed using version 1.7)
 
 NOTE: I have removed/commented out all dependencies from pyproject.toml for simplicity.
 
 ----
-Please, feel free to contact me at rodrigo.carvalho.al@gmail.com
+Please, feel free to contact me at <rodrigo.carvalho.al@gmail.com>
