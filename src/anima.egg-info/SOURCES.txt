@@ -4,8 +4,9 @@ README.md
 pyproject.toml
 src/anima/Unfinished_mlpot.py
 src/anima/__init__.py
+src/anima/ai_kernel.py
 src/anima/graphs.py
-src/anima/models.py
+src/anima/kernel_utils.py
 src/anima/neuralnetwork.py
 src/anima/representations.py
 src/anima/smiles.py
