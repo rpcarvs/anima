@@ -28,7 +28,7 @@ ONLY FOR THE SMILES CLASS:
 ONLY FOR THE AI-kernel model (in models module):
 * pytorch (model was developed using version 1.7)
 
-It is also recommended to install the dependencies in a new python-environment and using Anaconda.
+NOTE: I have removed/commented out all dependencies from pyproject.toml for simplicity.
 
 ----
-Please, feel free to contact me at rodrigo.carvalho.al@gmail.com, rodrigo.carvalho@physics.uu.se or rodrigo.carvalho@kemi.uu.se
+Please, feel free to contact me at rodrigo.carvalho.al@gmail.com

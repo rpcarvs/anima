@@ -101,15 +101,15 @@ class MolGraphs(SMILES):
             y = torch.tensor(np.array(y))
 
         dataset = []
-        for ii in range(len(x_graphs)):
-            gg = x_graphs[ii]
+        for ii in range(len(x_graphs)):  # type: ignore
+            gg = x_graphs[ii]  # type: ignore
             node_feats = []
             edge_feats = []
-            for i in gg.nodes:
-                node_feats.append(gg.nodes[i]["symbol"])
-            for i in gg.edges:
-                edge_feats.append(gg.get_edge_data(i[0], i[1])["bond_type"])
-            edge_index = torch.tensor(np.array(gg.edges).T)
+            for i in gg.nodes:  # type: ignore
+                node_feats.append(gg.nodes[i]["symbol"])  # type: ignore
+            for i in gg.edges:  # type: ignore
+                edge_feats.append(gg.get_edge_data(i[0], i[1])["bond_type"])  # type: ignore
+            edge_index = torch.tensor(np.array(gg.edges).T)  # type: ignore
             node_feats = torch.tensor(node_feats)
             edge_feats = torch.tensor(edge_feats)
             if targets is not None:
@@ -118,7 +118,7 @@ class MolGraphs(SMILES):
                         x=node_feats,
                         edge_index=edge_index,
                         edge_attr=edge_feats,
-                        y=y[ii],
+                        y=y[ii],  # type: ignore
                     )
                 )
             else:
