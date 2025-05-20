@@ -18,6 +18,9 @@ from .smiles import SMILES
 -add a proper logging instead of prints in the future
 -improve some functions. I was a bit stressed here with the PhD"""
 
+# setting max SMILES lenght
+max_length = 54
+
 smiles_exceptions = []
 big_smiles = []
 path = os.path.dirname(__file__) + "/lib/aikernel/"

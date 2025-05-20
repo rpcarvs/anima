@@ -4,13 +4,11 @@ import torch
 from .kernel_utils import (
     big_smiles,
     linear_model_red_only,
+    max_length,
     neural_inference,
     smiles_exceptions,
     smiles_sequence,
 )
-
-# setting max SMILES lenght
-max_length = 54
 
 
 def AIkernel(
@@ -39,9 +37,6 @@ def AIkernel(
     Returns:
         {}: a dictionary containing all the relevant results
     """
-
-    # setting max SMILES lenght
-    max_length = 54
 
     all_sequences = smiles_sequence(smiles_list, n_jobs, max_length)
     all_sequences = [ii for ii in all_sequences if ii is not None]  # type: ignore
