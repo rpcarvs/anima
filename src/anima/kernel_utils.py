@@ -6,7 +6,6 @@ Mainteined by © Rodrigo Carvalho
 """
 
 import os
-from typing import List
 
 import numpy as np
 import torch
@@ -26,18 +25,12 @@ big_smiles = []
 path = os.path.dirname(__file__) + "/lib/aikernel/"
 
 # reading vocab
-with open(path + "vocab.dat", "r") as f:
-    vocab = f.read().splitlines()
+try:
+    with open(path + "vocab.dat", "r") as f:
+        vocab = f.read().splitlines()
+except IOError:
+    print("Error loading vocab file")
 sml = SMILES()
-
-
-def transform(molecule: str, fix: bool = False) -> List[List[int]]:
-    """Transform SMILES to a standard format"""
-    if fix:
-        molecule = sml.PS_fix(molecule)
-    transformed = sml.OB_standard_smiles(sml.standard_smiles(molecule))
-    cleaned = sml.smiles_cleaner(transformed)
-    return sml.smilesToSequence(cleaned, vocab)
 
 
 def smiles_sequence(smiles_list, n_jobs, max_length):
@@ -55,10 +48,10 @@ def smiles_sequence(smiles_list, n_jobs, max_length):
         else:
             try:
                 try:
-                    transformed = transform(i)
+                    transformed = sml.transform(i, vocab)
                     return torch.tensor(transformed)
                 except Exception:
-                    transformed = transform(i, fix=True)
+                    transformed = sml.transform(i, vocab, fix=True)
                     return torch.tensor(transformed)
             except Exception:
                 smiles_exceptions.append(i)

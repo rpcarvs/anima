@@ -25,6 +25,19 @@ from .utils import elements
 
 
 class SMILES:
+    def transform(
+        self,
+        molecule: str,
+        vocab: List[str],
+        fix: bool = False,
+    ) -> List[List[int]]:
+        """Transform SMILES to a standard format using the class methods"""
+        if fix:
+            molecule = self.PS_fix(molecule)
+        transformed = self.OB_standard_smiles(self.standard_smiles(molecule))
+        cleaned = self.smiles_cleaner(transformed)
+        return self.smilesToSequence(cleaned, vocab)
+
     def smiles_cleaner(self, s: str) -> str:
         """Returns a 'clean' version of the SMILES to be used in
         Language Processing.
